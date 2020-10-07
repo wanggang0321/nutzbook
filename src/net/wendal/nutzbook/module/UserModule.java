@@ -23,23 +23,29 @@ import org.nutz.mvc.filter.CheckSession;
 
 import net.wendal.nutzbook.bean.User;
 
-@IocBean //还记得@IocBy吗？这个跟@IocBy有很大的关系
-@At("/user")
-@Ok("json:{locked:'password|salt',ignoreNull:true}")
-@Fail("http:500")
-@Filters(@By(type = CheckSession.class, args= {"me", "/"}))
+@IocBean // 声明为Ioc容器中的一个Bean，这个跟@IocBy有很大的关系
+@At("/user") // 整个模块的路径前缀
+@Ok("json:{locked:'password|salt',ignoreNull:true}") // 忽略password和salt属性，忽略空属性的json输出
+@Fail("http:500") // 抛出异常的话，就走500页面
+@Filters(@By(type = CheckSession.class, args= {"me", "/"})) // 检查当前Session是否带me这个属性
 public class UserModule {
 	
 	@Inject
 	protected Dao dao; // 就这么注入了，有@IocBean它才会生效
 	
 	@At
-	public int count() {
+	public int count() { // 统计用户数的方法
 		return dao.count(User.class);
 	}
 	
 	@At
-	@Filters()
+	@Ok("jsp:jsp.user.list")
+	public void index() {
+		
+	}
+	
+	@At
+	@Filters // 覆盖
 	public Object login(@Param("username") String name, @Param("password") String password, HttpSession session) {
 		User user = dao.fetch(User.class, Cnd.where("name", "=", name).and("password", "=", password));
 		if(user == null) {
@@ -57,7 +63,7 @@ public class UserModule {
 	}
 	
 	@At
-	public Object add(@Param("..")User user) {
+	public Object add(@Param("..")User user) { // 两个点号是按对象属性一一设置
 		NutMap re = new NutMap();
 		String msg = checkUser(user, true);
 		if(msg != null) {
